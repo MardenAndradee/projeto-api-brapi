@@ -1,4 +1,11 @@
 package com.marden.FinUp.Dtos;
 
-public record UsuarioDTO() {
+import java.time.LocalDate;
+
+public record UsuarioDTO(
+        String nome,
+        String email,
+        String login,
+        String senha
+) {
 }

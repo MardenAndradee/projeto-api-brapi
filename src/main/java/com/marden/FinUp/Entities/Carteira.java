@@ -21,7 +21,7 @@ public class Carteira {
     private double precoTotal;
     private LocalDate dataCompra;
 
-    Carteira(){}
+    public Carteira(){}
 
     public Carteira(Usuario idUsuario, String ticker, double qtd, double precoMedio, double precoTotal, LocalDate dataCompra) {
         this.idUsuario = idUsuario;

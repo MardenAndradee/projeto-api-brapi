@@ -15,9 +15,9 @@ public class Usuario {
     private String login;
     private String senha;
 
-    Usuario(){}
+    public Usuario(){}
 
-    Usuario(String nome, String email, String login, String senha){
+    public Usuario(String nome, String email, String login, String senha){
         this.nome = nome;
         this.email = email;
         this.login = login;

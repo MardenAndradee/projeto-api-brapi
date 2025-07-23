@@ -23,7 +23,7 @@ public class UsuarioService {
         ));
     }
 
-    public List<Usuario> getAllUsuarios(Long id){
+    public List<Usuario> getAllUsuarios(){
         return usuarioRepository.findAll();
     }
 

@@ -1,4 +1,10 @@
 package com.marden.FinUp.Dtos;
 
-public record HistoricoDTO() {
+import java.time.LocalDate;
+
+public record HistoricoDTO(
+        String ticker,
+        LocalDate dataConsulta,
+        String resultado
+) {
 }

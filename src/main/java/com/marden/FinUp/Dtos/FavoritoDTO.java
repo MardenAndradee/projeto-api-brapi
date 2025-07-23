@@ -1,4 +1,10 @@
 package com.marden.FinUp.Dtos;
 
-public record FavoritoDTO() {
+import java.time.LocalDate;
+
+public record FavoritoDTO(
+        String ticker,
+        String nomeAtivo,
+        LocalDate dataAdicao
+) {
 }
