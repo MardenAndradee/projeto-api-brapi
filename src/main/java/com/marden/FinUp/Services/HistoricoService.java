@@ -23,7 +23,7 @@ public class HistoricoService {
         ));
     }
 
-    public List<Historico> getAllUsuarios(Long id){
+    public List<Historico> getAllHistoricos(Long id){
         return historicoRepository.findAll();
     }
 

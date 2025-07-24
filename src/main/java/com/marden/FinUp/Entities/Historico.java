@@ -20,7 +20,7 @@ public class Historico {
     private LocalDate dataConsulta;
     private String resultado;
 
-    Historico(){}
+    public Historico(){}
 
     public Historico(Usuario usuario, String ticker, LocalDate dataConsulta, String resultado) {
         this.usuario = usuario;

@@ -23,7 +23,7 @@ public class FavoritoService {
         ));
     }
 
-    public List<Favorito> getAllUsuarios(Long id){
+    public List<Favorito> getAllFavoritos(Long id){
         return favoritoRepository.findAll();
     }
 

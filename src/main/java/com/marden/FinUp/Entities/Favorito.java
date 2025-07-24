@@ -20,7 +20,7 @@ public class Favorito {
     private String nomeAtivo;
     private LocalDate dataAdicao;
 
-    Favorito(){}
+    public Favorito(){}
 
     public Favorito(Usuario usuario, String ticker, String nomeAtivo, LocalDate dataAdicao) {
         this.usuario = usuario;

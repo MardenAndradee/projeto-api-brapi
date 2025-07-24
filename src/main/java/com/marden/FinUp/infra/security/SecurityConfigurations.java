@@ -27,6 +27,7 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.DELETE,"/usuario").permitAll()
                         .requestMatchers(HttpMethod.GET,"/usuario").permitAll()
                         .requestMatchers("/carteira").permitAll()
+                        .requestMatchers("/ativos/**").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
