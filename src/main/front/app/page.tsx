@@ -12,6 +12,9 @@ import { Switch } from "./components/ui/switch";
 import { Label } from "./components/ui/label";
 import { Search, Heart, TrendingUp, TrendingDown, User, Wallet, Star, Clock, Mail, Lock, LogOut, TrendingUp as LogoIcon } from 'lucide-react';
 
+import { loginUsuario } from './services/authService';
+import { saveToken, logout } from './utils/auth';
+
 // Mock data para ações
 const mockStocks = [
   { ticker: 'PETR4', name: 'Petrobras', price: 32.45, change: 2.1, changePercent: 6.92 },
@@ -33,20 +36,20 @@ const mockPortfolio = [
 ];
 
 // Login Component
-const LoginScreen = ({ onLogin, darkMode, setDarkMode }: { onLogin: (email: string, password: string) => void, darkMode: boolean, setDarkMode: (dark: boolean) => void }) => {
-  const [email, setEmail] = useState('');
+const LoginScreen = ({ onLogin, darkMode, setDarkMode }: { onLogin: (login: string, password: string) => void, darkMode: boolean, setDarkMode: (dark: boolean) => void }) => {
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simula delay de autenticação
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    onLogin(email, password);
-    setIsLoading(false);
+    try{
+      const token = await loginUsuario({login,password});
+      saveToken(token);
+      onLogin(login, password)
+    }catch(error){
+      alert("Erro ao fazer login")
+    }
   };
 
   return (
@@ -76,15 +79,15 @@ const LoginScreen = ({ onLogin, darkMode, setDarkMode }: { onLogin: (email: stri
         <CardContent className="space-y-6 pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="text">Login</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="login"
+                  type="text"
+                  placeholder="Seu login"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
                   className="pl-10 bg-background/50"
                   required
                 />
@@ -147,11 +150,6 @@ const LoginScreen = ({ onLogin, darkMode, setDarkMode }: { onLogin: (email: stri
             </Button>
           </div>
           
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">
-              Use qualquer email e senha para demo
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -165,7 +163,7 @@ export default function App() {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [filteredStocks, setFilteredStocks] = useState(mockStocks);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const [user, setUser] = useState<{ login: string; name: string } | null>(null);
 
   // Toggle dark mode
   useEffect(() => {
@@ -208,24 +206,26 @@ export default function App() {
     }
   }, [searchTerm]);
 
-  const handleLogin = (email: string, password: string) => {
-    // Simula autenticação - aceita qualquer email/senha
+  const handleLogin = (login: string, password: string) => {
     const userData = {
-      email,
-      name: email.split('@')[0].replace(/[0-9]/g, '').replace(/[^a-zA-Z]/g, ' ').trim() || 'Usuário'
+      login,
+      name: login || 'Usuário'
     };
+
+    localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("user", JSON.stringify(userData));
     
     setUser(userData);
     setIsAuthenticated(true);
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("user");
+
     setIsAuthenticated(false);
     setUser(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
   };
 
   const handleSearch = (term: string) => {
@@ -353,7 +353,7 @@ export default function App() {
 
           {/* Search Tab */}
           <TabsContent value="search" className="space-y-4">
-            <Card className="border-0 bg-card/30 backdrop-blur-sm">
+            <Card className="border-0 bg-card/50 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Search className="h-5 w-5" />
@@ -466,7 +466,7 @@ export default function App() {
                   </Avatar>
                   <div>
                     <h3 className="text-xl">{user?.name}</h3>
-                    <p className="text-muted-foreground">{user?.email}</p>
+                    <p className="text-muted-foreground">{user?.login}</p>
                   </div>
                 </div>
 
