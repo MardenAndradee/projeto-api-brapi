@@ -11,21 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Switch } from "./components/ui/switch";
 import { Label } from "./components/ui/label";
 import { Search, Heart, TrendingUp, TrendingDown, User, Wallet, Star, Clock, Mail, Lock, LogOut, TrendingUp as LogoIcon } from 'lucide-react';
+import { toast } from "sonner";
 
 import { loginUsuario } from './services/authService';
 import { saveToken, logout } from './utils/auth';
+import { fetchStockByTicker } from './services/tickerService';
+import { mockStocks, atualizarMockStocksComAPI } from "./services/mockStocksService";
 
-// Mock data para ações
-const mockStocks = [
-  { ticker: 'PETR4', name: 'Petrobras', price: 32.45, change: 2.1, changePercent: 6.92 },
-  { ticker: 'VALE3', name: 'Vale', price: 68.23, change: -1.45, changePercent: -2.08 },
-  { ticker: 'ITUB4', name: 'Itaú Unibanco', price: 25.67, change: 0.78, changePercent: 3.13 },
-  { ticker: 'BBDC4', name: 'Bradesco', price: 15.89, change: -0.23, changePercent: -1.43 },
-  { ticker: 'ABEV3', name: 'Ambev', price: 11.34, change: 0.45, changePercent: 4.13 },
-  { ticker: 'WEGE3', name: 'WEG', price: 45.78, change: 1.23, changePercent: 2.76 },
-  { ticker: 'MGLU3', name: 'Magazine Luiza', price: 8.45, change: -0.67, changePercent: -7.34 },
-  { ticker: 'B3SA3', name: 'B3', price: 12.56, change: 0.34, changePercent: 2.78 }
-];
+
 
 // Mock data para carteira
 const mockPortfolio = [
@@ -47,8 +40,9 @@ const LoginScreen = ({ onLogin, darkMode, setDarkMode }: { onLogin: (login: stri
       const token = await loginUsuario({login,password});
       saveToken(token);
       onLogin(login, password)
+      toast.success("Login realizado com sucesso!");
     }catch(error){
-      alert("Erro ao fazer login")
+      toast.error("Login ou senha incorretos");
     }
   };
 
@@ -165,6 +159,16 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<{ login: string; name: string } | null>(null);
 
+  useEffect(() => {
+  const atualizar = async () => {
+    await atualizarMockStocksComAPI();
+    console.log("mockStocks atualizado:", mockStocks);
+    setStocks(mockStocks);
+  };
+
+  atualizar();
+}, []);
+
   // Toggle dark mode
   useEffect(() => {
     if (darkMode) {
@@ -193,18 +197,7 @@ export default function App() {
     }
   }, []);
 
-  // Filter stocks based on search
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = mockStocks.filter(stock => 
-        stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredStocks(filtered);
-    } else {
-      setFilteredStocks(mockStocks);
-    }
-  }, [searchTerm]);
+
 
   const handleLogin = (login: string, password: string) => {
     const userData = {
@@ -228,14 +221,59 @@ export default function App() {
     setUser(null);
   };
 
-  const handleSearch = (term: string) => {
+  //StockList para API
+
+  const tickers = ["PETR4", "VALE3", "ITUB4", "BBDC4"];
+
+  const [stocks, setStocks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+   
+
+  const handleSearch = async (term: string) => {
     setSearchTerm(term);
-    if (term && !searchHistory.includes(term)) {
-      const newHistory = [term, ...searchHistory.slice(0, 9)];
-      setSearchHistory(newHistory);
-      localStorage.setItem('searchHistory', JSON.stringify(newHistory));
-    }
+
+  if (term && !searchHistory.includes(term)) {
+    const newHistory = [term, ...searchHistory.slice(0, 9)];
+    setSearchHistory(newHistory);
+    localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+  }
+
+  console.log(term)
+
+  if(term != ''){
+    console.log('procurando especifico')
+  try {
+    const result = await fetchStockByTicker(term);
+    setStocks([{
+      ticker: result.symbol,
+      name: result.shortName,
+      price: result.regularMarketPrice,
+      change: result.regularMarketChange,
+      changePercent: result.regularMarketChangePercent
+    }]);
+    
+
+    <div className="grid gap-4">
+      {stocks.map(stock => (
+      <StockCard key={stock.ticker} stock={stock} />
+    
+      ))}
+    </div>
+    
+  } catch (error) {
+    console.error("Erro ao buscar ativo:", error);
+  }
+}else{
+  await atualizarMockStocksComAPI();
+    console.log("mockStocks atualizado:", mockStocks);
+    setStocks(mockStocks);
+}
+
   };
+
+  
+  
 
   const toggleFavorite = (ticker: string) => {
     const newFavorites = favorites.includes(ticker)
@@ -257,8 +295,10 @@ export default function App() {
     return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
 
+  
+
   const StockCard = ({ stock }: { stock: typeof mockStocks[0] }) => (
-    <Card className="hover:shadow-lg transition-shadow duration-200 border-0 bg-card/50 backdrop-blur-sm">
+    <Card className="w-full max-w-sm min-h-[180px] hover:shadow-lg transition-shadow duration-200 border-0 bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
@@ -361,23 +401,32 @@ export default function App() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative">
-                  <Input
-                    placeholder="Digite o ticker ou nome da empresa..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10 bg-background/50"
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="Digite o ticker ou nome da empresa..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 bg-background/50"
+                    />
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <button
+                    onClick={() => handleSearch(searchTerm)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                  >
+                    Buscar
+                  </button>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredStocks.map((stock) => (
-                <StockCard key={stock.ticker} stock={stock} />
+            <div className="grid grid-cols-4 gap-4">
+              {stocks.length > 0 && stocks.map(stock => (
+              <StockCard key={stock.ticker} stock={stock} />
               ))}
             </div>
+
 
             {filteredStocks.length === 0 && searchTerm && (
               <Card className="border-0 bg-card/30 backdrop-blur-sm">
@@ -389,6 +438,19 @@ export default function App() {
               </Card>
             )}
           </TabsContent>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
           {/* Portfolio Tab */}
           <TabsContent value="portfolio" className="space-y-4">
