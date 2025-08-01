@@ -14,9 +14,11 @@ import { Search, Heart, TrendingUp, TrendingDown, User, Wallet, Star, Clock, Mai
 import { toast } from "sonner";
 
 import { loginUsuario } from './services/authService';
-import { saveToken, logout } from './utils/auth';
+import { saveToken, logout, getToken } from './utils/auth';
 import { fetchStockByTicker } from './services/tickerService';
 import { mockStocks, atualizarMockStocksComAPI } from "./services/mockStocksService";
+import { ObterIdUsuarioLogado } from './services/authService';
+import { salvarHistorico } from './services/historicoService';
 
 
 
@@ -45,6 +47,8 @@ const LoginScreen = ({ onLogin, darkMode, setDarkMode }: { onLogin: (login: stri
       toast.error("Login ou senha incorretos");
     }
   };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-900 dark:to-blue-950 flex items-center justify-center p-4">
@@ -233,42 +237,50 @@ export default function App() {
   const handleSearch = async (term: string) => {
     setSearchTerm(term);
 
-  if (term && !searchHistory.includes(term)) {
-    const newHistory = [term, ...searchHistory.slice(0, 9)];
-    setSearchHistory(newHistory);
-    localStorage.setItem("searchHistory", JSON.stringify(newHistory));
-  }
+    if (term && !searchHistory.includes(term)) {
+      const newHistory = [term, ...searchHistory.slice(0, 9)];
+      setSearchHistory(newHistory);
+      localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+    }
 
-  console.log(term)
-
-  if(term != ''){
-    console.log('procurando especifico')
-  try {
-    const result = await fetchStockByTicker(term);
-    setStocks([{
-      ticker: result.symbol,
-      name: result.shortName,
-      price: result.regularMarketPrice,
-      change: result.regularMarketChange,
-      changePercent: result.regularMarketChangePercent
-    }]);
+    if(term != ''){
+      try {
+        const result = await fetchStockByTicker(term);
+        setStocks([{
+          ticker: result.symbol,
+          name: result.shortName,
+          price: result.regularMarketPrice,
+          change: result.regularMarketChange,
+          changePercent: result.regularMarketChangePercent
+        }]);
     
 
-    <div className="grid gap-4">
-      {stocks.map(stock => (
-      <StockCard key={stock.ticker} stock={stock} />
+        <div className="grid gap-4">
+          {stocks.map(stock => (
+            <StockCard key={stock.ticker} stock={stock} />
+          ))}
+        </div>
+
+        //add ao historico
+        const idUsuario = ObterIdUsuarioLogado();
+        const dataConsulta = new Date().toISOString().split('T')[0];
+        const resultado = 
+          String(result.symbol) + " | " +
+          String(result.shortName) + " | R$" +
+          String(result.regularMarketPrice) + " | Variação: " +
+          String(result.regularMarketChange) + " (" +
+          String(result.regularMarketChangePercent) + "%)";
+
+        salvarHistorico(await idUsuario, result.symbol, dataConsulta, resultado);
     
-      ))}
-    </div>
-    
-  } catch (error) {
-    console.error("Erro ao buscar ativo:", error);
-  }
-}else{
-  await atualizarMockStocksComAPI();
-    console.log("mockStocks atualizado:", mockStocks);
-    setStocks(mockStocks);
-}
+      } catch (error) {
+      console.error("Erro ao buscar ativo:", error);
+      }
+    }else{
+      await atualizarMockStocksComAPI();
+      console.log("mockStocks atualizado:", mockStocks);
+      setStocks(mockStocks);
+    }
 
   };
 

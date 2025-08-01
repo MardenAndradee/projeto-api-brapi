@@ -24,7 +24,8 @@ public class HistoricoService {
     }
 
     public List<Historico> getAllHistoricos(Long id){
-        return historicoRepository.findAll();
+        List<Historico> listaHistorico = historicoRepository.findByUsuarioIdUsuario(id);
+        return listaHistorico;
     }
 
     @Transactional

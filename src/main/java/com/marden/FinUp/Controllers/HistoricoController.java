@@ -36,8 +36,6 @@ public class HistoricoController {
 
     @GetMapping("/historico")
     public ResponseEntity<List<Historico>> getAllHistorico(@RequestParam(required = false) Long idUsuario){
-
-
         return ResponseEntity.status(HttpStatus.OK).body(historicoService.getAllHistoricos(idUsuario));
     }
 

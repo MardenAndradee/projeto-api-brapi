@@ -9,6 +9,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,9 @@ public class UsuarioController {
 
     @Autowired
     UsuarioService usuarioService;
+
+    @Autowired
+    UsuarioRepository usuarioRepository;
 
     @PostMapping("/usuario")
     public ResponseEntity<Usuario> saveUsuarios(@RequestBody @Valid UsuarioDTO usuariosDTO){
@@ -52,6 +56,19 @@ public class UsuarioController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id){
         this.usuarioService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/usuario/me")
+    public ResponseEntity<Long> getIdUsuarioLogado(){
+        String login = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Usuario usuario = usuarioRepository.findByLogin(login);
+
+        if(usuario!=null){
+            return ResponseEntity.ok(usuario.getIdUsuario());
+        }else{
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }
